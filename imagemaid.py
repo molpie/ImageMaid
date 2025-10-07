@@ -80,7 +80,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 config_dir = os.path.join(base_dir, "config")
 args = KometaArgs("Kometa-Team/ImageMaid", base_dir, options, use_nightly=False)
 logger = KometaLogger(script_name, "imagemaid", os.path.join(config_dir, "logs"), discord_url=args["discord"], is_trace=args["trace"], log_requests=args["log-requests"])
-logger.secret([args["url"], args["discord"], args["token"], quote(str(args["url"])), requests.utils.urlparse(args["url"]).netloc])
+logger.secret([args["url"], args["discord"], args["token"], args["telegram_token"], args["telegram_chat"], quote(str(args["url"])), requests.utils.urlparse(args["url"]).netloc])
 requests.Session.send = util.update_send(requests.Session.send, args["timeout"])
 plexapi.BASE_HEADERS["X-Plex-Client-Identifier"] = args.uuid
 
