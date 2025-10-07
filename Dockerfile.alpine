@@ -1,0 +1,56 @@
+# Build stage
+FROM python:3.11-alpine AS builder
+ARG BRANCH_NAME=master
+ENV BRANCH_NAME=${BRANCH_NAME}
+
+# Install build dependencies and compile Python packages
+RUN echo "**** install build dependencies ****" \
+ && apk update \
+ && apk upgrade \
+ && apk add --no-cache --virtual .build-deps \
+    gcc g++ musl-dev \
+    libxml2-dev libxslt-dev \
+    zlib-dev libjpeg-turbo-dev \
+    linux-headers \
+    cmake make \
+    wget
+
+# Copy and install Python requirements
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir --upgrade setuptools wheel \
+ && pip3 install --no-cache-dir --user --upgrade --requirement requirements.txt
+
+# Runtime stage
+FROM python:3.11-alpine
+ARG BRANCH_NAME=master
+ENV BRANCH_NAME=${BRANCH_NAME}
+ENV TINI_VERSION=v0.19.0
+ENV KOMETA_DOCKER=True
+
+# Install only runtime dependencies
+RUN echo "**** install runtime packages ****" \
+ && apk update \
+ && apk upgrade \
+ && apk add --no-cache tzdata wget curl nano \
+ && ARCH=$(uname -m) \
+ && case ${ARCH} in \
+      x86_64) TINI_ARCH="amd64" ;; \
+      aarch64) TINI_ARCH="arm64" ;; \
+      armv7l) TINI_ARCH="armel" ;; \
+      *) TINI_ARCH=${ARCH} ;; \
+    esac \
+ && wget -O /tini https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-${TINI_ARCH} \
+ && chmod +x /tini \
+ && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+
+# Copy Python packages from builder stage
+COPY --from=builder /root/.local /root/.local
+
+# Set Python path to include user packages
+ENV PATH=/root/.local/bin:$PATH
+
+# Copy application code
+COPY . /
+
+VOLUME /config
+ENTRYPOINT ["/tini", "-s", "python3", "imagemaid.py", "--"]

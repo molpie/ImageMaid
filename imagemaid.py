@@ -62,6 +62,8 @@ options = [
     {"arg": "t",  "key": "token",            "env": "PLEX_TOKEN",       "type": "str",  "default": None,     "help": "Plex Token of the Server you want to connect to."},
     {"arg": "oo", "key": "overlays-only",    "env": "OVERLAYS_ONLY",    "type": "bool", "default": False,    "help": "Will only remove Kometa Overlay Images and other images will be ignored."},
     {"arg": "di", "key": "discord",          "env": "DISCORD",          "type": "str",  "default": None,     "help": "Webhook URL to channel for Notifications."},
+    {"arg": "tg", "key": "telegram_token",   "env": "TELEGRAM_BOT_TOKEN", "type": "str", "default": None,     "help": "Telegram Bot Token for notifications."},
+    {"arg": "tc", "key": "telegram_chat",    "env": "TELEGRAM_CHAT_ID", "type": "str", "default": None,     "help": "Telegram Chat ID for notifications."},
     {"arg": "ti", "key": "timeout",          "env": "TIMEOUT",          "type": "int",  "default": 600,      "help": "Connection Timeout in Seconds that's greater than 0. (Default: 600)"},
     {"arg": "nv", "key": "no-verify-ssl",    "env": "NO_VERIFY_SSL",    "type": "bool", "default": False,    "help": "Turns off Global SSL Verification."},
     {"arg": "s",  "key": "sleep",            "env": "SLEEP",            "type": "int",  "default": 60,       "help": "Sleep Timer between Empty Trash, Clean Bundles, and Optimize DB. (Default: 60)"},
@@ -84,6 +86,22 @@ logger = KometaLogger(script_name, "imagemaid", os.path.join(config_dir, "logs")
 logger.secret([args["url"], args["discord"], args["token"], quote(str(args["url"])), requests.utils.urlparse(args["url"]).netloc])
 requests.Session.send = util.update_send(requests.Session.send, args["timeout"])
 plexapi.BASE_HEADERS["X-Plex-Client-Identifier"] = args.uuid
+
+def send_telegram_notification(message, bot_token, chat_id, timeout=10):
+    """Send notification via Telegram Bot API"""
+    try:
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        data = {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "Markdown",
+            "disable_web_page_preview": True
+        }
+        response = requests.post(url, json=data, timeout=timeout)
+        response.raise_for_status()
+    except Exception as e:
+        # Log error locally but don't fail the script
+        logger.debug(f"Telegram notification failed: {e}")
 
 def imagemaid_thread(attrs):
     with ProcessPoolExecutor(max_workers=1) as executor:
@@ -119,6 +137,8 @@ def run_imagemaid(attrs):
 
     try:
         logger.info("Script Started", log=False, discord=True, start="script")
+        if args["telegram_token"] and args["telegram_chat"]:
+            send_telegram_notification("🚀 ImageMaid Script Started", args["telegram_token"], args["telegram_chat"])
     except Failed as e:
         logger.error(f"Discord URL Error: {e}")
     report = []
@@ -455,12 +475,16 @@ def run_imagemaid(attrs):
     except Failed as e:
         logger.separator()
         logger.critical(e, discord=True)
+        if args["telegram_token"] and args["telegram_chat"]:
+            send_telegram_notification(f"❌ ImageMaid Failed: {str(e)}", args["telegram_token"], args["telegram_chat"])
         logger.separator()
     except Exception as e:
         for message in messages:
             logger.debug(message)
         logger.stacktrace()
         logger.critical(e, discord=True)
+        if args["telegram_token"] and args["telegram_chat"]:
+            send_telegram_notification(f"💥 ImageMaid Error: {str(e)}", args["telegram_token"], args["telegram_chat"])
     except KeyboardInterrupt:
         logger.separator(f"User Canceled Run {script_name}")
         logger.remove_main_handler()
@@ -471,6 +495,14 @@ def run_imagemaid(attrs):
     report.append([(f"{script_name} Finished", "")])
     report.append([("Total Runtime", f"{logger.runtime('script')}")])
     logger.report(f"{script_name} Summary", description=description, rows=report, width=18, discord=True)
+    if args["telegram_token"] and args["telegram_chat"]:
+        # Create a simplified summary for Telegram
+        summary_lines = [f"✅ {script_name} Completed Successfully"]
+        for row in report:
+            if row and len(row) == 2 and row[0] and row[1]:
+                summary_lines.append(f"• {row[0]}: {row[1]}")
+        telegram_message = "\n".join(summary_lines[:10])  # Limit to 10 lines for Telegram
+        send_telegram_notification(telegram_message, args["telegram_token"], args["telegram_chat"])
     logger.remove_main_handler()
 
 if __name__ == "__main__":
