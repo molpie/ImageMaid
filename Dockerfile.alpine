@@ -42,6 +42,15 @@ ENV PATH=/root/.local/bin:$PATH
 COPY . /
 
 VOLUME /config
+
+# Create non-root user
+RUN adduser -D appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD pgrep -f "python" > /dev/null || exit 1
+
 # Tini is now available at /sbin/tini
 ENTRYPOINT ["/sbin/tini", "--"]
 # Run your program under Tini
