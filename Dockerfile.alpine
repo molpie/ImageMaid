@@ -10,7 +10,8 @@ RUN echo "**** install build dependencies ****" \
  && apk add --no-cache --virtual .build-deps \
     gcc g++ musl-dev \
     libxml2-dev libxslt-dev \
-    zlib-dev libjpeg-turbo-dev
+    zlib-dev libjpeg-turbo-dev \
+    linux-headers
 
 # Copy and install Python requirements
 COPY requirements.txt .
@@ -28,7 +29,7 @@ ENV KOMETA_DOCKER=True
 RUN echo "**** install runtime packages ****" \
  && apk update \
  && apk upgrade \
- && apk add --no-cache tzdata wget curl nano tini \
+ && apk add --no-cache tzdata tini \
  && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
 
 # Copy Python packages from builder stage
