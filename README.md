@@ -272,6 +272,18 @@ Discord Webhook URL to send notifications to.
 
 * **Shell Command:** `-d "https://discord.com/api/webhooks/###/###"` or `--discord "https://discord.com/api/webhooks/###/###"`
 
+#### Telegram Bot Token and Chat ID
+
+Telegram Bot Token and Chat ID to send notifications to. Create a bot via @BotFather on Telegram and get the token. Get the chat ID by messaging your bot and checking the API or using a bot like @userinfobot.
+
+* **Environment Variables:**
+  * `TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz`
+  * `TELEGRAM_CHAT_ID=123456789`
+
+* **Shell Commands:**
+  * `-tg "123456789:ABCdefGHIjklMNOpqrsTUVwxyz"` or `--telegram-token "123456789:ABCdefGHIjklMNOpqrsTUVwxyz"`
+  * `-tc "123456789"` or `--telegram-chat "123456789"`
+
 #### Timeout
 
 Connection Timeout in seconds that's greater than 0.
@@ -373,4 +385,3 @@ The example above is detailed out below to better explain how it works:
     * `10:00|monthly(1)|mode=nothing;photo-transcoder=true`
   
     * `time |frequency |options`
-  
