@@ -42,4 +42,7 @@ ENV PATH=/root/.local/bin:$PATH
 COPY . /
 
 VOLUME /config
-ENTRYPOINT ["/sbin/tini", "-s", "python3", "imagemaid.py", "--"]
+# Tini is now available at /sbin/tini
+ENTRYPOINT ["/sbin/tini", "--"]
+# Run your program under Tini
+CMD ["python3", "imagemaid.py"]
