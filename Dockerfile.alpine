@@ -12,7 +12,6 @@ RUN echo "**** install build dependencies ****" \
     libxml2-dev libxslt-dev \
     zlib-dev libjpeg-turbo-dev \
     linux-headers \
-    cmake make \
     wget
 
 # Copy and install Python requirements
