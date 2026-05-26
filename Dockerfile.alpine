@@ -1,5 +1,5 @@
 ﻿# Build stage
-FROM python:3.11-alpine AS builder
+FROM python:3.13-alpine AS builder
 ARG BRANCH_NAME=master
 ENV BRANCH_NAME=${BRANCH_NAME}
 
@@ -19,7 +19,7 @@ RUN pip3 install --no-cache-dir --upgrade setuptools wheel \
  && pip3 install --no-cache-dir --user --upgrade --requirement requirements.txt
 
 # Runtime stage
-FROM python:3.11-alpine
+FROM python:3.13-alpine
 ARG BRANCH_NAME=master
 ENV BRANCH_NAME=${BRANCH_NAME}
 ENV TINI_VERSION=v0.19.0

@@ -143,6 +143,7 @@ def run_imagemaid(attrs):
         logger.error(f"Discord URL Error: {e}")
     report = []
     messages = []
+    telegram_stats = {}
     try:
         # Check Mode
         if mode not in modes:
@@ -323,6 +324,7 @@ def run_imagemaid(attrs):
                     logger.info(f"{len(urls)} In-Use Images Found")
                     logger.info(f"Runtime: {logger.runtime()}")
                     fields.append(("Query", f"{logger.runtime('query')}"))
+                    telegram_stats['in_use'] = len(urls)
 
                 report.append(fields)
 
@@ -334,6 +336,7 @@ def run_imagemaid(attrs):
                     if 'Contents' not in r and "." not in f and f not in urls
                 ]
                 logger.info(f"{len(bloat_paths)} Bloat Images Found")
+                telegram_stats['bloat'] = len(bloat_paths)
                 logger.info(f"Runtime: {logger.runtime()}")
 
                 # Work on Bloat Images
@@ -453,6 +456,8 @@ def run_imagemaid(attrs):
             space = util.format_bytes(logger["size"])
             logger.info(f"Space Recovered: {space}")
             logger.info(f"Runtime: {logger.runtime()}")
+            telegram_stats['transcode_count'] = len(transcode_images)
+            telegram_stats['transcode_space'] = space
             report.append([("Remove PhotoTranscoder Images", "")])
             report.append([("", f"{space} of Space Recovered Removing {len(transcode_images)} Files")])
             report.append([("Scan Time", f"{logger.runtime('transcode_scan')}"), ("Remove Time", f"{logger.runtime('transcode')}")])
@@ -496,12 +501,13 @@ def run_imagemaid(attrs):
     report.append([("Total Runtime", f"{logger.runtime('script')}")])
     logger.report(f"{script_name} Summary", description=description, rows=report, width=18, discord=True)
     if args["telegram_token"] and args["telegram_chat"]:
-        # Create a simplified summary for Telegram
         summary_lines = [f"✅ {script_name} Completed Successfully"]
-        for row in report:
-            if row and len(row) == 2 and row[0] and row[1]:
-                summary_lines.append(f"• {row[0]}: {row[1]}")
-        telegram_message = "\n".join(summary_lines[:10])  # Limit to 10 lines for Telegram
+        if 'in_use' in telegram_stats and 'bloat' in telegram_stats:
+            summary_lines.append(f"• {telegram_stats['in_use']} In-Use Images Found -> {telegram_stats['bloat']} Bloat Images Found")
+        if 'transcode_count' in telegram_stats and 'transcode_space' in telegram_stats:
+            summary_lines.append(f"• Removed {telegram_stats['transcode_count']} PhotoTranscoder Images -> Space Recovered: {telegram_stats['transcode_space']}")
+        summary_lines.append(f"• Total Runtime: {logger.runtime('script')}")
+        telegram_message = "\n".join(summary_lines)
         send_telegram_notification(telegram_message, args["telegram_token"], args["telegram_chat"])
     logger.remove_main_handler()
 
