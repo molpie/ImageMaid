@@ -5,4 +5,4 @@ kometautils==0.3.4
 requests==2.33.0
 retrying==1.4.2
 tqdm==4.67.1
-certifi==2026.10.18
+certifi==2026.10.23
