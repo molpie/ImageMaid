@@ -1,7 +1,8 @@
 num2words==0.5.14
-pillow==12.2.0
+pillow==13.0.0
 PlexAPI==4.16.1
 kometautils==0.3.4
 requests==2.33.0
 retrying==1.4.2
 tqdm==4.67.1
+certifi==2026.10.18
